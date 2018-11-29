@@ -1,4 +1,3 @@
-
 var express = require("express"); // This line calls the express module
 var app = express(); //invoke express application
 var mysql = require('mysql'); // allow access to sql
@@ -71,14 +70,6 @@ const db = mysql.createConnection({
  database: 'shirley'
 });
 
-app.get('/query', function(req,res){
- let sql = 'SELECT * from user' 
- let query = db.query(sql,(err,res)=>{
-   if (err) throw err;
-   console.log(res);
-});
-res.send("look at console")
-});
 
 db.connect((err) =>{
  if(err){
@@ -91,6 +82,50 @@ db.connect((err) =>{
 });
 
 // ******************** End SQL Connection ********************************** //
+
+//app.get('/createusers', function(req,res){
+// let sql = 'CREATE TABLE users (Id int NOT NULL AUTO_INCREMENT PRIMARY KEY, Username varchar(255), Password varchar(255));'
+// let query = db.query(sql,(err,res)=>{
+//   if (err) throw err;
+//   console.log(err);
+//});
+//res.send("Table created")
+//});
+
+
+app.get('/user', function(req,res){
+let sql = 'CREATE TABLE user (Id int NOT NULL PRIMARY KEY, Username varchar(255), Password varchar(255));'
+let query = db.query(sql,(err,res)=>{
+ if (err) throw err;
+   console.log(err);
+});
+res.send("Table created")
+});
+
+
+ app.get('/query', function(req,res){
+ let sql = 'SELECT * from users' 
+ let query = db.query(sql,(err,res)=>{
+   if (err) throw err;
+   console.log(res);
+});
+res.send("look at console")
+});
+
+app.get('/insert', function(req,res){
+ let sql = 'INSERT INTO users (Username, Password) VALUES ("shirlo", "romels");'
+let query = db.query(sql,(err,res)=>{
+   if (err) throw err;
+   console.log(res);
+});
+res.send("Item added")
+});
+
+
+
+
+
+
 
 // Set up a page that jsut says something 
 app.get("/", function(req, res){
@@ -130,14 +165,7 @@ app.get('/add', isLoggedIn, function(req, res){
   console.log("Now you are on the products page!");
 });
 
-app.get('/user', function(req,res){
-let sql = 'CREATE TABLE user (Id int PRIMARY KEY, Username varchar(255), Password varchar(255));'
-let query = db.query(sql,(err,res)=>{
- if (err) throw err;
-   console.log(err);
-});
-res.send("Table created")
-});
+
 
 
 // ***** Post new product to database
@@ -299,11 +327,21 @@ function isLoggedIn(req, res, next) {
     });
 
     // used to deserialize the user
+  //  passport.deserializeUser(function(Id, done) {
+  //     db.query("SELECT * FROM users WHERE Id = ? ",[Id], function(err, rows){
+  //          done(err, rows[0]);
+  //      });
+  //  });
+
     passport.deserializeUser(function(Id, done) {
-       db.query("SELECT * FROM user WHERE Id = ? ",[Id], function(err, rows){
-            done(err, rows[0]);
-        });
-    });
+       db.query("SELECT * FROM users WHERE Id = "+Id,function(err,rows){	
+			done(err, rows[0]);
+			
+       });
+		});
+
+
+
 
     // =========================================================================
     // LOCAL SIGNUP ============================================================
@@ -322,7 +360,7 @@ function isLoggedIn(req, res, next) {
         function(req, username, password, done) {
             // find a user whose email is the same as the forms email
             // we are checking to see if the user trying to login already exists
-            db.query("SELECT * FROM user WHERE username = ?",[username], function(err, rows) {
+            db.query("SELECT * FROM users WHERE username = ?",[username], function(err, rows) {
                 if (err)
                     return done(err);
                 if (rows.length) {
@@ -332,13 +370,15 @@ function isLoggedIn(req, res, next) {
                     // create the user
                     var newUserMysql = {
                         username: username,
-                        password: bcrypt.hashSync(password, null, null)  // use the generateHash function in our user model
+                        password: bcrypt.hashSync(password, null, null), // use the generateHash function in our user model
+                        id: ""
                     };
+                  
 
-                    var insertQuery = "INSERT INTO user (username, password ) values (?,?)";
+                    var insertQuery = "INSERT INTO users (username, password) Values (?,?)";
 
-                    db.query(insertQuery,[newUserMysql.username, newUserMysql.password],function(err, rows) {
-                        newUserMysql.Id = rows.insertId;
+                    db.query(insertQuery,[newUserMysql.username, newUserMysql.password],function(err, rows){
+                        newUserMysql.id = rows.insertId;
 
                         return done(null, newUserMysql);
                     });
@@ -346,6 +386,7 @@ function isLoggedIn(req, res, next) {
             });
         })
     );
+    
 
     // =========================================================================
     // LOCAL LOGIN =============================================================
@@ -362,7 +403,7 @@ function isLoggedIn(req, res, next) {
             passReqToCallback : true // allows us to pass back the entire request to the callback
         },
         function(req, username, password, done) { // callback with email and password from our form
-            db.query("SELECT * FROM user WHERE username = ?",[username], function(err, rows){
+            db.query("SELECT * FROM users WHERE username = ?",[username], function(err, rows){
                 if (err)
                     return done(err);
                 if (!rows.length) {
