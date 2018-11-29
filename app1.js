@@ -83,12 +83,56 @@ db.connect((err) =>{
 
 // ******************** End SQL Connection ********************************** //
 
+//app.get('/createusers', function(req,res){
+// let sql = 'CREATE TABLE users (Id int NOT NULL AUTO_INCREMENT PRIMARY KEY, Username varchar(255), Password varchar(255));'
+// let query = db.query(sql,(err,res)=>{
+//   if (err) throw err;
+//   console.log(err);
+//});
+//res.send("Table created")
+//});
+
+
+app.get('/user', function(req,res){
+let sql = 'CREATE TABLE user (Id int NOT NULL PRIMARY KEY, Username varchar(255), Password varchar(255));'
+let query = db.query(sql,(err,res)=>{
+ if (err) throw err;
+   console.log(err);
+});
+res.send("Table created")
+});
+
+
+ app.get('/query', function(req,res){
+ let sql = 'SELECT * from users' 
+ let query = db.query(sql,(err,res)=>{
+   if (err) throw err;
+   console.log(res);
+});
+res.send("look at console")
+});
+
+app.get('/insert', function(req,res){
+ let sql = 'INSERT INTO users (Username, Password) VALUES ("shirlo", "romels");'
+let query = db.query(sql,(err,res)=>{
+   if (err) throw err;
+   console.log(res);
+});
+res.send("Item added")
+});
+
+
+
+
+
+
+
 // Set up a page that jsut says something 
 app.get("/", function(req, res){
     
    // res.send("This is the best class ever");
     res.render("index");
-    console.log("Its!")
+    console.log("Its true you know!")
     
 });
 
@@ -283,11 +327,21 @@ function isLoggedIn(req, res, next) {
     });
 
     // used to deserialize the user
-    passport.deserializeUser(function(Id, done) {
-       db.query("SELECT * FROM users WHERE Id = ? ",[Id], function(err, rows){
-            done(err, rows[0]);
-        });
-    });
+   passport.deserializeUser(function(Id, done) {
+    db.query("SELECT * FROM users WHERE Id = ? ",[Id], function(err, rows){
+     done(err, rows[0]);
+     });
+  });
+
+   // passport.deserializeUser(function(Id, done) {
+   //    db.query("SELECT * FROM users WHERE Id = "+Id,function(err,rows){	
+//			done(err, rows[0]);
+			
+   //    });
+//		});
+
+
+
 
     // =========================================================================
     // LOCAL SIGNUP ============================================================
@@ -316,12 +370,14 @@ function isLoggedIn(req, res, next) {
                     // create the user
                     var newUserMysql = {
                         username: username,
-                        password: bcrypt.hashSync(password, null, null)  // use the generateHash function in our user model
+                        password: bcrypt.hashSync(password, null, null), // use the generateHash function in our user model
+                    
                     };
+                  
 
-                    var insertQuery = "INSERT INTO users ( username, password ) values (?,?)";
+                    var insertQuery = "INSERT INTO users (username, password) Values (?,?)";
 
-                    db.query(insertQuery,[newUserMysql.username, newUserMysql.password],function(err, rows) {
+                    db.query(insertQuery,[newUserMysql.username, newUserMysql.password],function(err, rows){
                         newUserMysql.Id = rows.insertId;
 
                         return done(null, newUserMysql);
@@ -330,6 +386,7 @@ function isLoggedIn(req, res, next) {
             });
         })
     );
+    
 
     // =========================================================================
     // LOCAL LOGIN =============================================================
